@@ -5,7 +5,7 @@
 
 using namespace std;
 
-#define INF 0x3fffffff
+#define INF 0x3fff
 const int MAXN = 10000+5;
 vector<int> conn[MAXN];
 int dp[MAXN][3]; 
@@ -13,49 +13,31 @@ int dp[MAXN][3];
 // 1: client with exact one server son 
 // 2: server
 
-int DP(int idx, int stat, int prev)
+void DP(int idx, int prev)
 {
-    if(dp[idx][stat] != -1)
-        return dp[idx][stat];
-
-    if(stat == 0){
-        dp[idx][stat] = 0;
-        for(vector<int>::iterator it=conn[idx].begin(); it != conn[idx].end(); ++it)
-        {
-            if(*it != prev)
-                dp[idx][stat] += DP(*it, 1, idx);
-        }
-    }else if(stat == 1){
-        int minVal = INF, temp;
-        for(vector<int>::iterator it=conn[idx].begin(); it != conn[idx].end(); ++it)
-        {
-            if(*it != prev)
-            {
-                temp = -DP(*it,1, idx)+DP(*it, 2, idx);
-                minVal = min(minVal, temp);
-            } 
-        }
-        dp[idx][stat] = DP(idx, 0, prev) + minVal;
-    }else{
-       dp[idx][stat] = 1;
-       for(vector<int>::iterator it=conn[idx].begin(); it != conn[idx].end(); ++it)
-        {
-            if(*it != prev)
-                dp[idx][stat] += min(DP(*it, 0, idx), DP(*it, 2, idx));
-        } 
-    }
-    return dp[idx][stat];
+    dp[idx][0] = 0;
+    dp[idx][1] = INF;
+    dp[idx][2] = 1;
+    
+    int value;
+   for(vector<int>::iterator it=conn[idx].begin(); it != conn[idx].end(); ++it)  
+   {
+       value = *it;
+       if(value == prev)
+            continue;
+        DP(value, idx);
+        dp[idx][0] += dp[value][1];
+        dp[idx][1] = min(dp[idx][1], dp[value][2]-dp[value][1]);
+        dp[idx][2] += min(dp[value][0], dp[value][2]);
+   }
+   dp[idx][1] += dp[idx][0];
 }
 
 int main()
 {
-    bool terminal = false;
     int N, u, v;
-    while(!terminal)
+    while(scanf("%d", &N))
     {
-        scanf("%d", &N);
-
-        memset(dp,-1, sizeof(dp));
         for(int i = 1; i <= N; i++)
             conn[i].clear();
 
@@ -65,12 +47,13 @@ int main()
             conn[u].push_back(v);
             conn[v].push_back(u);
         }
-
-        // TODO
-
         scanf("%d", &N);
+        
+        DP(1,-1);
+        printf("%d\n", min(dp[1][1], dp[1][2]));
+
         if(N == -1)
-            terminal = true;
+            break;
     }
 
     return 0;
